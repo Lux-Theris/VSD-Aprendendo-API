@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Razor.Language;
 using Microsoft.EntityFrameworkCore;
 using TarefasApi.Models;
 
@@ -22,9 +24,26 @@ namespace TarefasApi.Controllers
 
         // GET: api/TarefaItems
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<TarefaItem>>> GetTarefaItems()
+        public async Task<ActionResult<IEnumerable<TarefaItem>>> GetTarefaItems([FromQuery] string? name, [FromQuery] string? orderby)
         {
-            return await _context.TarefaItems.ToListAsync();
+            var query = _context.TarefaItems.AsQueryable();
+            if (!string.IsNullOrEmpty(name)){
+                query = query.Where(tarefa => tarefa.Nome.ToLower().Contains(name.ToLower()));
+            }
+            if (!string.IsNullOrEmpty(orderby)){
+                switch (orderby.ToLower()){
+                    case "name":
+                        query = query.OrderBy(tarefa => tarefa.Nome);
+                        break;
+                    case "dataentrega": 
+                        query = query.OrderBy(tarefa => tarefa.DataEntrega);
+                        break;
+                    default:
+                        query = query.OrderBy(tarefa => tarefa.Id);
+                        break;
+                }
+            }
+            return await query.ToListAsync();
         }
 
         // GET: api/TarefaItems/5
